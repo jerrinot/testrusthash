@@ -30,9 +30,10 @@ const DER_MAX_SIGNATURE_SIZE: usize = 72;
 
 // DER FORMAT offsets
 const DER_SEQUENCE_TAG_OFFSET: usize = 0;
-const DER_TOTAL_LENGTH_OFFSET: usize = 1;
-const DER_R_TAG_OFFSET: usize = 2;
-const DER_R_LEN_OFFSET: usize = 3;
+const DER_TOTAL_LENGTH_OFFSET: usize = DER_SEQUENCE_TAG_OFFSET + 1;
+const DER_R_TAG_OFFSET: usize = DER_TOTAL_LENGTH_OFFSET + 1;
+const DER_R_LEN_OFFSET: usize = DER_R_TAG_OFFSET + 1;
+const DER_R_VALUE_OFFSET: usize = DER_R_LEN_OFFSET + 1;
 
 #[no_mangle]
 pub extern "system" fn Java_info_jerrinot_sandbox_rustyhashes_RustyCrypto_hash(
@@ -83,7 +84,7 @@ pub extern "system" fn Java_info_jerrinot_sandbox_rustyhashes_RustyCrypto_genkey
     }
 }
 
-fn _copy_p1363_value_der(value: &[u8], destination: &mut [u8]) -> usize {
+fn copy_p1363_value_to_der(value: &[u8], destination: &mut [u8]) -> usize {
     let mut sign_len: usize = 0;
     let mut start_index = 0;
 
@@ -129,57 +130,19 @@ fn convert_p1363_to_der(
     let r = &p1363_signature[0..32];
     let s = &p1363_signature[32..64];
 
-    // set the r value into the resulting DER signature
-    let mut r_sign_len: usize = 0;
-    let mut r_unsigned_value_start_offset = DER_R_LEN_OFFSET + 1;
-    let mut r_start_index = 0;
-
-    // skip the leading zero bytes
-    // leading zero are present in the P1363 format, because it uses fixed-size for both r and s values
-    // on the other hand, the DER format is variable-size length: it uses the minimal number of bytes to represent the r and s values
-    while r[r_start_index] == 0 {
-        r_start_index += 1;
-    }
-    if r[r_start_index] & 0x80 != 0 {
-        // if the highest bit is set, we need to add an extra zero byte, see the DER spec
-        der_signature[r_unsigned_value_start_offset] = 0; // Add a zero byte before `r` value
-        r_sign_len = 1;
-    }
-    r_unsigned_value_start_offset = r_unsigned_value_start_offset + r_sign_len;
-    let unsigned_r_len = s.len() - r_start_index;
-    let r_value_end_offset = r_unsigned_value_start_offset + unsigned_r_len;
-    der_signature[r_unsigned_value_start_offset..r_value_end_offset].copy_from_slice(&r[r_start_index..]);
-
-    let mut s_start_index = 0;
-    while s[s_start_index] == 0 {
-        s_start_index += 1;
-    }
-    let mut s_sign_len = 0;
-    let s_len_offset = r_value_end_offset + 1;
-    let mut s_unsigned_value_start_offset = s_len_offset + 1;
-    if s[s_start_index] & 0x80 != 0 {
-        der_signature[s_unsigned_value_start_offset] = 0; // Add a zero byte before `s` value
-        s_sign_len = 1;
-    }
-    s_unsigned_value_start_offset = s_unsigned_value_start_offset + s_sign_len;
-    let unsigned_s_len = s.len() - s_start_index;
-    let s_value_end_offset = s_unsigned_value_start_offset + unsigned_s_len;
-    der_signature[s_unsigned_value_start_offset..s_value_end_offset].copy_from_slice(&s[s_start_index..]);
-
-    // add DER metadata
-    let total_size = s_value_end_offset;
-    let signed_r_len = unsigned_r_len + r_sign_len;
+    let r_size = copy_p1363_value_to_der(r, &mut der_signature[DER_R_VALUE_OFFSET..]);
+    let s_value_offset = DER_R_VALUE_OFFSET + r_size + 2; // why 2? 1 byte for s_tag and 1 byte for s_length
+    let s_size = copy_p1363_value_to_der(s, &mut der_signature[s_value_offset..]);
+    let s_tag_offset = DER_R_VALUE_OFFSET + r_size;
+    let s_len_offset = s_tag_offset + 1;
+    let total_size = s_value_offset + s_size;
+    
     der_signature[DER_SEQUENCE_TAG_OFFSET] = DER_SEQUENCE_TAG_ID;
     der_signature[DER_TOTAL_LENGTH_OFFSET] = (total_size - 2) as u8; // total length, excluding the first two bytes
     der_signature[DER_R_TAG_OFFSET] = DER_INTEGER_TAG;
-    der_signature[DER_R_LEN_OFFSET] = signed_r_len as u8;
-    // now follows the actual r_value - this was already set above
-    let s_tag_offset = r_value_end_offset;
-    let s_len_offset = s_tag_offset + 1;
-    let signed_s_len = unsigned_s_len + s_sign_len;
+    der_signature[DER_R_LEN_OFFSET] = r_size as u8;
     der_signature[s_tag_offset] = DER_INTEGER_TAG;
-    der_signature[s_len_offset] = signed_s_len as u8;
-    // now follows the actual s_value - this was already set above
+    der_signature[s_len_offset] = s_size as u8;
 
     // println!("DER signature size: {}", total_size);
     // println!("DER signature: \n{}", der_signature[..total_size].iter().map(|b| format!("{:02x}", b)).collect::<Vec<_>>().join(", "));
