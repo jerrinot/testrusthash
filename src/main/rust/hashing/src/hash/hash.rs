@@ -84,25 +84,30 @@ pub extern "system" fn Java_info_jerrinot_sandbox_rustyhashes_RustyCrypto_genkey
     }
 }
 
-fn copy_p1363_value_to_der(value: &[u8], destination: &mut [u8]) -> usize {
-    let value_len = value.len();
+fn is_highest_bit_set(value: u8) -> bool {
+    value & 0x80 != 0
+}
+
+fn copy_p1363_int_value_to_der(value: &[u8], destination: &mut [u8]) -> usize {
+    let source_value_len = value.len();
 
     // skip the leading zero bytes
     // leading zero are present in the P1363 format, because it uses fixed-size encoding for both r and s values
     // on the other hand, the DER format is variable-size length: it uses the minimal number of bytes to represent integer values
-    // Skip the leading zero bytes
-    let source_start_index = value.iter().position(|&x| x != 0).unwrap_or_else(|| value_len - 1);
+    let source_start_index = value.iter().position(|&x| x != 0).unwrap_or_else(|| source_value_len - 1);
 
     let mut dest_start_index = 0;
-    if value[source_start_index] & 0x80 != 0 {
-        // if the highest bit is set, we need to add an extra zero byte, see the DER spec
-        destination[0] = 0; // Add a zero byte before value
+    if is_highest_bit_set(value[source_start_index]) {
+        // P1363 format uses unsigned integers while the DER format uses two's complement.
+        // So if the highest bit in P1363 value is set we need to add an extra zero byte to indicate it's a positive number.
+        // see the DER spec for more details
+        destination[0] = 0;
         dest_start_index = 1;
     }
-    let unsigned_len = value_len - source_start_index;
-    let value_end_offset = dest_start_index + unsigned_len;
-    destination[dest_start_index..value_end_offset].copy_from_slice(&value[source_start_index..]);
-    return value_end_offset;
+    let unsigned_len = source_value_len - source_start_index;
+    let dest_end_offset = dest_start_index + unsigned_len;
+    destination[dest_start_index..dest_end_offset].copy_from_slice(&value[source_start_index..]);
+    return dest_end_offset;
 }
 
 fn convert_p1363_to_der(
@@ -130,9 +135,9 @@ fn convert_p1363_to_der(
     let r = &p1363_signature[0..32];
     let s = &p1363_signature[32..64];
 
-    let r_size = copy_p1363_value_to_der(r, &mut der_signature[DER_R_VALUE_OFFSET..]);
+    let r_size = copy_p1363_int_value_to_der(r, &mut der_signature[DER_R_VALUE_OFFSET..]);
     let s_value_offset = DER_R_VALUE_OFFSET + r_size + 2; // why 2? 1 byte for s_tag and 1 byte for s_length
-    let s_size = copy_p1363_value_to_der(s, &mut der_signature[s_value_offset..]);
+    let s_size = copy_p1363_int_value_to_der(s, &mut der_signature[s_value_offset..]);
     let s_tag_offset = DER_R_VALUE_OFFSET + r_size;
     let s_len_offset = s_tag_offset + 1;
     let total_size = s_value_offset + s_size;
