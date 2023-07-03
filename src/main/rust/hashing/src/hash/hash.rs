@@ -85,23 +85,23 @@ pub extern "system" fn Java_info_jerrinot_sandbox_rustyhashes_RustyCrypto_genkey
 }
 
 fn copy_p1363_value_to_der(value: &[u8], destination: &mut [u8]) -> usize {
-    let mut sign_len: usize = 0;
-    let mut start_index = 0;
+    let value_len = value.len();
 
     // skip the leading zero bytes
-    // leading zero are present in the P1363 format, because it uses fixed-size for both r and s values
-    // on the other hand, the DER format is variable-size length: it uses the minimal number of bytes to represent the r and s values
-    while value[start_index] == 0 {
-        start_index += 1;
-    }
-    if value[start_index] & 0x80 != 0 {
+    // leading zero are present in the P1363 format, because it uses fixed-size encoding for both r and s values
+    // on the other hand, the DER format is variable-size length: it uses the minimal number of bytes to represent integer values
+    // Skip the leading zero bytes
+    let source_start_index = value.iter().position(|&x| x != 0).unwrap_or_else(|| value_len - 1);
+
+    let mut dest_start_index = 0;
+    if value[source_start_index] & 0x80 != 0 {
         // if the highest bit is set, we need to add an extra zero byte, see the DER spec
-        destination[0] = 0; // Add a zero byte before `r` value
-        sign_len = 1;
+        destination[0] = 0; // Add a zero byte before value
+        dest_start_index = 1;
     }
-    let unsigned_len = value.len() - start_index;
-    let value_end_offset = sign_len + unsigned_len;
-    destination[sign_len..value_end_offset].copy_from_slice(&value[start_index..]);
+    let unsigned_len = value_len - source_start_index;
+    let value_end_offset = dest_start_index + unsigned_len;
+    destination[dest_start_index..value_end_offset].copy_from_slice(&value[source_start_index..]);
     return value_end_offset;
 }
 
@@ -136,7 +136,7 @@ fn convert_p1363_to_der(
     let s_tag_offset = DER_R_VALUE_OFFSET + r_size;
     let s_len_offset = s_tag_offset + 1;
     let total_size = s_value_offset + s_size;
-    
+
     der_signature[DER_SEQUENCE_TAG_OFFSET] = DER_SEQUENCE_TAG_ID;
     der_signature[DER_TOTAL_LENGTH_OFFSET] = (total_size - 2) as u8; // total length, excluding the first two bytes
     der_signature[DER_R_TAG_OFFSET] = DER_INTEGER_TAG;
