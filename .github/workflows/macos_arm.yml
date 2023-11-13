@@ -8,7 +8,7 @@ on:
 
 jobs:
   publish:
-    runs-on: macos-latest-xl
+    runs-on: macos-13-xlarge
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -26,7 +26,7 @@ jobs:
       - name: Commit the file
         run: |
           git config --global user.name 'GitHub Actions'
-          git config --global user.email '
+          git config --global user.email 'jaromir.hamala@gmail.com'
           git add created-file.txt
           git commit -m "Add created-file.txt"
       - name: Push the file
