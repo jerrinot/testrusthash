@@ -45,7 +45,7 @@ jobs:
           repository: jerrinot/questdb
       - name: Install tooling
         run: |
-          brew install make cmake gcc
+          brew install make cmake gcc nasm
       - name: Go to the build directory
         run: |
           cd core
