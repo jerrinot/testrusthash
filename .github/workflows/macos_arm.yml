@@ -13,9 +13,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: jerrinot/questdb
-
-      - name: Test in FreeBSD
-        id: test
+      - name: Build in FreeBSD
         uses: vmactions/freebsd-vm@v1
         with:
           usesh: true
@@ -26,19 +24,55 @@ jobs:
             cd core
             cmake -B build/release -DCMAKE_BUILD_TYPE=Release
             cmake --build build/release --config Release
-      - name: logs stuff
+      - name: log git status
         run: |
           git status
-#      - name: Go to the build directory
-#        run: |
-#          cd core
-#          cmake -B build/release -DCMAKE_BUILD_TYPE=Release
-#          cmake --build build/release --config Release
-#          cd ..
-#      - name: Commit the file
-#        run: |
-#          git config --global user.name 'GitHub Actions - ARM build'
-#          git config --global user.email 'jaromir@questdb.io'
-#          git add core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-#          git commit -m "Rebuild MacOS ARM"
-#
+      - name: Save Binary to Cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
+          # cache key format: nativelibs-freebsd-<commit hash>
+          key: nativelibs-freebsd-${{ github.sha }}
+  build-macos-arm:
+    runs-on: macos-13-xlarge
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: jerrinot/questdb
+      - name: Install tooling
+        run: |
+          brew install make cmake gcc
+      - name: Go to the build directory
+        run: |
+          cd core
+          cmake -B build/release -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/release --config Release
+          cd ..
+      - name: Save Binary to Cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
+          key: nativelibs-macosarm-${{ github.sha }}
+  collect-and-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: jerrinot/questdb
+      - name: Restore FreeBSD binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
+          key: nativelibs-freebsd-${{ github.sha }}
+      - name: Restore MacOS ARM binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
+          key: nativelibs-macosarm-${{ github.sha }}
+      - name: Check git status
+        run: |
+          git status
