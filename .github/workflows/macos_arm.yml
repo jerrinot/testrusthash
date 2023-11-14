@@ -22,6 +22,7 @@ jobs:
           prepare: |
             pkg install -y curl cmake gcc git nasm openjdk17
           run: |
+            export JAVA_HOME=/usr/local/openjdk17
             cd core
             echo $JAVA_HOME
             which java
