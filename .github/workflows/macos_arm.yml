@@ -34,7 +34,7 @@ jobs:
             core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
           # cache key format: nativelibs-freebsd-<commit hash>
           key: nativelibs-freebsd-${{ github.sha }}
-  build-macos-arm:
+  build-macos:
     strategy:
       matrix:
         os: [macos-13-xlarge, macos-latest]
@@ -67,7 +67,7 @@ jobs:
             core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
           key: nativelibs-osx-${{ github.sha }}
   collect-and-commit:
-    needs: [build-freebsd, build-macos-arm]
+    needs: [build-freebsd, build-macos]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
