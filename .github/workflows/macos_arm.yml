@@ -1,4 +1,4 @@
-name: Test on MacOS ARM and Push
+name: Test on FreeBSD
 
 on:
   workflow_dispatch:
@@ -8,24 +8,38 @@ on:
 
 jobs:
   publish:
-    runs-on: macos-13-xlarge
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
           repository: jerrinot/questdb
-      - name: Install tooling
-        run: |
-          brew install make cmake gcc
-      - name: Go to the build directory
-        run: |
-          cd core
-          cmake -B build/release -DCMAKE_BUILD_TYPE=Release
-          cmake --build build/release --config Release
-          cd ..
-      - name: Commit the file
-        run: |
-          git config --global user.name 'GitHub Actions - ARM build'
-          git config --global user.email 'jaromir@questdb.io'
-          git add core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-          git commit -m "Rebuild MacOS ARM"
 
+      - name: Test in FreeBSD
+        id: test
+        uses: vmactions/freebsd-vm@v1
+        with:
+          envs: 'MYTOKEN MYTOKEN2'
+          usesh: true
+          prepare: |
+            pkg install -y curl
+
+          run: |
+            pwd
+            ls -lah
+            whoami
+            env
+            freebsd-version
+
+#      - name: Go to the build directory
+#        run: |
+#          cd core
+#          cmake -B build/release -DCMAKE_BUILD_TYPE=Release
+#          cmake --build build/release --config Release
+#          cd ..
+#      - name: Commit the file
+#        run: |
+#          git config --global user.name 'GitHub Actions - ARM build'
+#          git config --global user.email 'jaromir@questdb.io'
+#          git add core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
+#          git commit -m "Rebuild MacOS ARM"
+#
