@@ -80,7 +80,7 @@ jobs:
       - name: Generate Makefiles for ${{ env.GENERATOR }}
         run: |
           cd core
-          cmake -G "$generator}" -DCMAKE_BUILD_TYPE=Release -B cmake-build-release -S.
+          cmake -G "$generator" -DCMAKE_BUILD_TYPE=Release -B cmake-build-release -S.
       - name: Build source-code Linux
         run: |
           cmake --build cmake-build-release --config Release
