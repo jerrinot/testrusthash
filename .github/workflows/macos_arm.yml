@@ -10,8 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: add a file with a random name
-        run: |
-            echo "test" > $(date +%Y_%m_%d_%H_%M_%S).txt
+        run: echo "test" > $(date +%Y_%m_%d_%H_%M_%S).txt
       - name: Commit the files
         run: |
           git config --global user.name 'GitHub Actions - Rebuild Native Libraries'
