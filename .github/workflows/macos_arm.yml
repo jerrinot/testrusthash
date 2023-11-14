@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: add a new file
-        run: touch $(date +%Y_%m_%d_%H_%M_%S).txt
+        run: echo "foo" > $(date +%Y_%m_%d_%H_%M_%S).txt
       - name: Commit the files
         run: |
           git config --global user.name 'GitHub Actions - Rebuild Native Libraries'
