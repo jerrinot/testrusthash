@@ -88,7 +88,7 @@ jobs:
       - name: CMAKE Linux ARM
         run: |
           cmake -DCMAKE_TOOLCHAIN_FILE=./src/main/c/toolchains/linux-arm64.cmake -DARM_TOOLCHAIN_PATH=/usr/bin/ -DCMAKE_EXECUTABLE_SUFFIX=-10 -DCMAKE_CROSSCOMPILING=True -DCMAKE_BUILD_TYPE=Release -B cmake-build-release-arm64
-      - name: Build source-code $(Agent.OS) for ARM Linux
+      - name: Build source-code for ARM Linux
         run: |
           cmake --build cmake-build-release-arm64 --config Release
       - name: Download windows jni_md.h from JDK 11
