@@ -56,6 +56,7 @@ jobs:
             core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
           key: nativelibs-macosarm-${{ github.sha }}
   collect-and-commit:
+    needs: [build-freebsd, build-macos-arm]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
