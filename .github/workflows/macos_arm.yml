@@ -5,64 +5,64 @@ on:
 # This workflow is triggered manually from the Actions tab.
 
 jobs:
-#  build-freebsd:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          repository: jerrinot/questdb
-#      - name: Build in FreeBSD
-#        uses: vmactions/freebsd-vm@v1
-#        with:
-#          usesh: true
-#          prepare: |
-#            pkg install -y curl cmake gcc git nasm openjdk17
-#          run: |
-#            export JAVA_HOME=/usr/local/openjdk17
-#            cd core
-#            cmake -B build/release -DCMAKE_BUILD_TYPE=Release
-#            cmake --build build/release --config Release
-#      - name: log git status
-#        run: |
-#          git status
-#      - name: Save Binary to Cache
-#        uses: actions/cache/save@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
-#          key: nativelibs-freebsd-${{ github.sha }}
-#  build-macos:
-#    strategy:
-#      matrix:
-#        os: [macos-13-xlarge, macos-latest]
-#    runs-on: ${{ matrix.os }}
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          repository: jerrinot/questdb
-#      - name: Install tooling
-#        run: |
-#          brew install make cmake gcc nasm
-#      - name: Go to the build directory
-#        run: |
-#          cd core
-#          cmake -B build/release -DCMAKE_BUILD_TYPE=Release
-#          cmake --build build/release --config Release
-#          cd ..
-#      - name: Save MacOS ARM Binary to Cache
-#        if : ${{ matrix.os == 'macos-13-xlarge' }}
-#        uses: actions/cache/save@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-#          key: nativelibs-armosx-${{ github.sha }}
-#      - name: Save MacOS Intel Binary to Cache
-#        if: ${{ matrix.os == 'macos-latest' }}
-#        uses: actions/cache/save@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
-#          key: nativelibs-osx-${{ github.sha }}
+  build-freebsd:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: jerrinot/questdb
+      - name: Build in FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          usesh: true
+          prepare: |
+            pkg install -y curl cmake gcc git nasm openjdk17
+          run: |
+            export JAVA_HOME=/usr/local/openjdk17
+            cd core
+            cmake -B build/release -DCMAKE_BUILD_TYPE=Release
+            cmake --build build/release --config Release
+      - name: log git status
+        run: |
+          git status
+      - name: Save Binary to Cache
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
+          key: nativelibs-freebsd-${{ github.sha }}
+  build-macos:
+    strategy:
+      matrix:
+        os: [macos-13-xlarge, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: jerrinot/questdb
+      - name: Install tooling
+        run: |
+          brew install make cmake gcc nasm
+      - name: Go to the build directory
+        run: |
+          cd core
+          cmake -B build/release -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/release --config Release
+          cd ..
+      - name: Save MacOS ARM Binary to Cache
+        if : ${{ matrix.os == 'macos-13-xlarge' }}
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
+          key: nativelibs-armosx-${{ github.sha }}
+      - name: Save MacOS Intel Binary to Cache
+        if: ${{ matrix.os == 'macos-latest' }}
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
+          key: nativelibs-osx-${{ github.sha }}
   build-other:
     runs-on: ubuntu-latest
 #    defaults:
@@ -137,55 +137,55 @@ jobs:
           path: |
             core/src/main/resources/io/questdb/bin/windows/libquestdb.dll
           key: nativelibs-windows-${{ github.sha }}
-#  collect-and-commit:
-#    needs: [build-freebsd, build-macos, build-other]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#        with:
-#          repository: jerrinot/questdb
-#      - name: Print file sizes before
-#        run: |
-#          find ./core/src/main/resources/io/questdb/bin/ -type f -exec ls -l {} \;
-#      - name: Restore FreeBSD binary from Cache
-#        uses: actions/cache/restore@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
-#          key: nativelibs-freebsd-${{ github.sha }}
-#      - name: Restore MacOS ARM binary from Cache
-#        uses: actions/cache/restore@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-#          key: nativelibs-armosx-${{ github.sha }}
-#      - name: Restore MacOS Intel binary from Cache
-#        uses: actions/cache/restore@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
-#          key: nativelibs-osx-${{ github.sha }}
-#      - name: Restore Linux binary from Cache
-#        uses: actions/cache/restore@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/linux/libquestdb.so
-#          key: nativelibs-linux-${{ github.sha }}
-#      - name: Restore Linux ARM binary from Cache
-#        uses: actions/cache/restore@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/armlinux/libquestdb.so
-#          key: nativelibs-armlinux-${{ github.sha }}
-#      - name: Restore Windows binary from Cache
-#        uses: actions/cache/restore@v3
-#        with:
-#          path: |
-#            core/src/main/resources/io/questdb/bin/windows/libquestdb.dll
-#          key: nativelibs-windows-${{ github.sha }}
-#      - name: Check git status
-#        run: |
-#          git status
-#      - name: Print file sizes after
-#        run: |
-#          find ./core/src/main/resources/io/questdb/bin/ -type f -exec ls -l {} \;
+  collect-and-commit:
+    needs: [build-freebsd, build-macos, build-other]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: jerrinot/questdb
+      - name: Print file sizes before
+        run: |
+          find ./core/src/main/resources/io/questdb/bin/ -type f -exec ls -l {} \;
+      - name: Restore FreeBSD binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
+          key: nativelibs-freebsd-${{ github.sha }}
+      - name: Restore MacOS ARM binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
+          key: nativelibs-armosx-${{ github.sha }}
+      - name: Restore MacOS Intel binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
+          key: nativelibs-osx-${{ github.sha }}
+      - name: Restore Linux binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/linux/libquestdb.so
+          key: nativelibs-linux-${{ github.sha }}
+      - name: Restore Linux ARM binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/armlinux/libquestdb.so
+          key: nativelibs-armlinux-${{ github.sha }}
+      - name: Restore Windows binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/windows/libquestdb.dll
+          key: nativelibs-windows-${{ github.sha }}
+      - name: Check git status
+        run: |
+          git status
+      - name: Print file sizes after
+        run: |
+          find ./core/src/main/resources/io/questdb/bin/ -type f -exec ls -l {} \;
