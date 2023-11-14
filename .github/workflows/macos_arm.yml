@@ -2,9 +2,7 @@ name: Test on FreeBSD
 
 on:
   workflow_dispatch:
-
 # This workflow is triggered manually from the Actions tab.
-# running on MacOS ARM only
 
 jobs:
   build-freebsd:
@@ -58,7 +56,7 @@ jobs:
         with:
           path: |
             core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-          key: nativelibs-macosarm-${{ github.sha }}
+          key: nativelibs-armosx-${{ github.sha }}
       - name: Save MacOS Intel Binary to Cache
         if: ${{ matrix.os == 'macos-latest' }}
         uses: actions/cache/save@v3
@@ -87,7 +85,7 @@ jobs:
         with:
           path: |
             core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-          key: nativelibs-macosarm-${{ github.sha }}
+          key: nativelibs-armosx-${{ github.sha }}
       - name: Restore MacOS Intel binary from Cache
         uses: actions/cache/restore@v3
         with:
