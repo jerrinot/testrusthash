@@ -7,7 +7,7 @@ on:
 # running on MacOS ARM only
 
 jobs:
-  publish:
+  build-freebsd:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -24,8 +24,6 @@ jobs:
           run: |
             export JAVA_HOME=/usr/local/openjdk17
             cd core
-            echo $JAVA_HOME
-            which java
             cmake -B build/release -DCMAKE_BUILD_TYPE=Release
             cmake --build build/release --config Release
       - name: logs stuff
