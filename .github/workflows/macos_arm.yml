@@ -20,7 +20,7 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y curl cmake gcc git nasm
+            pkg install -y curl cmake gcc git nasm openjdk17
           run: |
             cd core
             cmake -B build/release -DCMAKE_BUILD_TYPE=Release
