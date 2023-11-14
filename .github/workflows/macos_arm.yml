@@ -20,14 +20,9 @@ jobs:
         with:
           usesh: true
           prepare: |
-            pkg install -y curl cmake gcc git
+            pkg install -y curl cmake gcc git g++
 
           run: |
-            pwd
-            ls
-            whoami
-            env
-            freebsd-version
             cd core
             cmake -B build/release -DCMAKE_BUILD_TYPE=Release
             cmake --build build/release --config Release
