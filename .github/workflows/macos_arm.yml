@@ -137,7 +137,7 @@ jobs:
           path: |
             core/src/main/resources/io/questdb/bin/windows/libquestdb.dll
           key: nativelibs-windows-${{ github.sha }}
-  collect-and-commit:
+  collect-commit-and-push:
     needs: [build-freebsd, build-macos, build-other]
     runs-on: ubuntu-latest
     steps:
