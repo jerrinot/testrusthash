@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: add a file with a random name
         run: |
-            echo "test" > $(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+            echo "test" > $(date +%Y_%m_%d_%H_%M_%S).txt
       - name: Commit the files
         run: |
           git config --global user.name 'GitHub Actions - Rebuild Native Libraries'
