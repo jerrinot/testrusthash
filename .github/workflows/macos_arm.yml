@@ -76,7 +76,6 @@ jobs:
         with:
           repository: jerrinot/questdb
       - name: Increase file count and install tooling
-      - working-directory: ./core
         run: |
           sudo sysctl -w fs.file-max=500000
           sudo apt-get update -y
