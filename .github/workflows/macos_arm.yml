@@ -35,7 +35,9 @@ jobs:
           # cache key format: nativelibs-freebsd-<commit hash>
           key: nativelibs-freebsd-${{ github.sha }}
   build-macos-arm:
-    runs-on: macos-13-xlarge
+    strategy:
+      matrix:
+        os: [macos-13-xlarge, macos-latest]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -49,12 +51,20 @@ jobs:
           cmake -B build/release -DCMAKE_BUILD_TYPE=Release
           cmake --build build/release --config Release
           cd ..
-      - name: Save Binary to Cache
+      - name: Save MacOS ARM Binary to Cache
+        if : ${{ matrix.os == 'macos-13-xlarge' }}
         uses: actions/cache/save@v3
         with:
           path: |
             core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
           key: nativelibs-macosarm-${{ github.sha }}
+      - name: Save MacOS Intel Binary to Cache
+        if: ${{ matrix.os == 'macos-latest' }}
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
+          key: nativelibs-osx-${{ github.sha }}
   collect-and-commit:
     needs: [build-freebsd, build-macos-arm]
     runs-on: ubuntu-latest
@@ -74,6 +84,12 @@ jobs:
           path: |
             core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
           key: nativelibs-macosarm-${{ github.sha }}
+      - name: Restore MacOS Intel binary from Cache
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
+          key: nativelibs-osx-${{ github.sha }}
       - name: Check git status
         run: |
           git status
