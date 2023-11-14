@@ -5,187 +5,21 @@ on:
 # This workflow is triggered manually from the Actions tab.
 
 jobs:
-  build-freebsd:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          repository: jerrinot/questdb
-      - name: Build in FreeBSD
-        uses: vmactions/freebsd-vm@v1
-        with:
-          usesh: true
-          prepare: |
-            pkg install -y curl cmake gcc git nasm openjdk17
-          run: |
-            export JAVA_HOME=/usr/local/openjdk17
-            cd core
-            cmake -B build/release -DCMAKE_BUILD_TYPE=Release
-            cmake --build build/release --config Release
-      - name: log git status
-        run: |
-          git status
-      - name: Save Binary to Cache
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
-          key: nativelibs-freebsd-${{ github.sha }}
-  build-macos:
-    strategy:
-      matrix:
-        os: [macos-13-xlarge, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          repository: jerrinot/questdb
-      - name: Install tooling
-        run: |
-          brew install make cmake gcc nasm
-      - name: Go to the build directory
-        run: |
-          cd core
-          cmake -B build/release -DCMAKE_BUILD_TYPE=Release
-          cmake --build build/release --config Release
-          cd ..
-      - name: Save MacOS ARM Binary to Cache
-        if : ${{ matrix.os == 'macos-13-xlarge' }}
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-          key: nativelibs-armosx-${{ github.sha }}
-      - name: Save MacOS Intel Binary to Cache
-        if: ${{ matrix.os == 'macos-latest' }}
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
-          key: nativelibs-osx-${{ github.sha }}
-  build-other:
-    runs-on: ubuntu-latest
-#    defaults:
-#      run:
-#        working-directory: ./core
-    env:
-      generator: "CodeBlocks - Unix Makefiles"
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          repository: jerrinot/questdb
-      - name: Increase file count and install tooling
-        run: |
-          sudo sysctl -w fs.file-max=500000
-          sudo apt-get update -y
-          sudo apt-get install -y nasm g++-10-aarch64-linux-gnu gcc-10-aarch64-linux-gnu gcc-mingw-w64 g++-mingw-w64
-      - name: Generate Makefiles
-        run: |
-          cd ./core
-          cmake -G "$generator" -DCMAKE_BUILD_TYPE=Release -B cmake-build-release -S.
-      - name: Build source-code Linux
-        run: |
-          cd ./core
-          cmake --build cmake-build-release --config Release
-      - name: CMAKE Linux ARM
-        run: |
-          cd ./core
-          cmake -DCMAKE_TOOLCHAIN_FILE=./src/main/c/toolchains/linux-arm64.cmake -DARM_TOOLCHAIN_PATH=/usr/bin/ -DCMAKE_EXECUTABLE_SUFFIX=-10 -DCMAKE_CROSSCOMPILING=True -DCMAKE_BUILD_TYPE=Release -B cmake-build-release-arm64
-      - name: Build source-code for ARM Linux
-        run: |
-          cd ./core
-          cmake --build cmake-build-release-arm64 --config Release
-      - name: Download windows jni_md.h from JDK 11
-        run: |
-          cd ./core
-          curl https://raw.githubusercontent.com/AdoptOpenJDK/openjdk-jdk11/master/src/java.base/windows/native/include/jni_md.h > $JAVA_HOME/include/jni_md.h
-      - name: CMake for Windows
-        run: |
-          cd ./core
-          cmake -DCMAKE_TOOLCHAIN_FILE=./src/main/c/toolchains/windows-x86_64.cmake -DCMAKE_CROSSCOMPILING=True -DCMAKE_BUILD_TYPE=Release -B cmake-build-release-win64
-      - name: Build source-code for Windows
-        run: |
-          cd ./core
-          cmake --build cmake-build-release-win64 --config Release
-      - name: Check C++ runtime dependency
-        run: |
-          cd ./core
-          which x86_64-w64-mingw32-objdump
-          x86_64-w64-mingw32-objdump -p ./src/main/resources/io/questdb/bin/windows/libquestdb.dll
-          if x86_64-w64-mingw32-objdump -p ./src/main/resources/io/questdb/bin/windows/libquestdb.dll | grep -q libstdc++; then
-            echo "Failure: C++ runtime dependency detected"
-            exit 1
-          fi
-      - name: Check git status
-        run: |
-          git status
-      - name: Save Linux Binary to Cache
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/linux/libquestdb.so
-          key: nativelibs-linux-${{ github.sha }}
-      - name: Save Linux ARM Binary to Cache
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/armlinux/libquestdb.so
-          key: nativelibs-armlinux-${{ github.sha }}
-      - name: Save Windows Binary to Cache
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/windows/libquestdb.dll
-          key: nativelibs-windows-${{ github.sha }}
   collect-commit-and-push:
-    needs: [build-freebsd, build-macos, build-other]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          repository: jerrinot/questdb
-      - name: Print file sizes before
+      - name: add a file with a random name
         run: |
-          find ./core/src/main/resources/io/questdb/bin/ -type f -exec ls -l {} \;
-      - name: Restore FreeBSD binary from Cache
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/freebsd/libquestdb.so
-          key: nativelibs-freebsd-${{ github.sha }}
-      - name: Restore MacOS ARM binary from Cache
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/armosx/libquestdb.dylib
-          key: nativelibs-armosx-${{ github.sha }}
-      - name: Restore MacOS Intel binary from Cache
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/osx/libquestdb.dylib
-          key: nativelibs-osx-${{ github.sha }}
-      - name: Restore Linux binary from Cache
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/linux/libquestdb.so
-          key: nativelibs-linux-${{ github.sha }}
-      - name: Restore Linux ARM binary from Cache
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/armlinux/libquestdb.so
-          key: nativelibs-armlinux-${{ github.sha }}
-      - name: Restore Windows binary from Cache
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            core/src/main/resources/io/questdb/bin/windows/libquestdb.dll
-          key: nativelibs-windows-${{ github.sha }}
-      - name: Check git status
+            echo "test" > $(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+      - name: Commit the files
         run: |
-          git status
-      - name: Print file sizes after
-        run: |
-          find ./core/src/main/resources/io/questdb/bin/ -type f -exec ls -l {} \;
+          git config --global user.name 'GitHub Actions - Rebuild Native Libraries'
+          git config --global user.email 'jaromir.hamala@questdb.io'
+          git commit -am "random file added"
+      - name: Push the changes
+        uses: ad-m/github-push-action@master
+        with:
+          branch: ${{ github.ref }}
+
+
