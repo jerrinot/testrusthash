@@ -15,6 +15,7 @@ jobs:
         run: |
           git config --global user.name 'GitHub Actions - Rebuild Native Libraries'
           git config --global user.email 'jaromir.hamala@questdb.io'
+          git add .
           git commit -am "random file added"
       - name: Push the changes
         uses: ad-m/github-push-action@master
