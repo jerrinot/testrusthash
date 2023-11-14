@@ -112,8 +112,10 @@ jobs:
           cd ./core
           which x86_64-w64-mingw32-objdump
           x86_64-w64-mingw32-objdump -p ./src/main/resources/io/questdb/bin/windows/libquestdb.dll
-          x86_64-w64-mingw32-objdump -p ./src/main/resources/io/questdb/bin/windows/libquestdb.dll | grep libstdc++
-          if [ $? -eq 0 ]; then echo "Failure: C++ runtime dependency detected"; exit 1; fi
+          if x86_64-w64-mingw32-objdump -p ./src/main/resources/io/questdb/bin/windows/libquestdb.dll | grep -q libstdc++; then
+            echo "Failure: C++ runtime dependency detected"
+            exit 1
+          fi
       - name: Check git status
         run: |
           git status
